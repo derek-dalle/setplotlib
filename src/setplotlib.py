@@ -82,6 +82,21 @@ def set_plot(h_f=None):
 	# And the dots per inch.
 	dpi_f_i = h_f.get_dpi() + 0.;
 	
+	# NOTE: This will eventually be set by the input!
+	# Desired width of the figure
+	L_x = 3.25; # in
+	# Desired aspect ratio
+	AR_f = AR_f_i;
+	# Get the output height
+	L_y = L_x * AR_f + 0.0;
+	# Determine the correct DPI to keep the same window size.
+	dpi_f = L_x_i / L_x * dpi_f_i + 0.0;
+	# Apply the size changes to the figure.
+	matplotlib.pyplot.setp(h_f, 
+		'figwidth' , L_x  ,
+		'figheight', L_y  ,
+		'dpi'      , dpi_f);
+	
 	# Find ALL the text objects
 	h_t = h_f.findobj(matplotlib.text.Text);
 	# Loop through and set the text to good values.
@@ -110,49 +125,46 @@ def set_plot(h_f=None):
 	# Turn off the extra ticks.
 	h_a.xaxis.set_ticks_position('bottom');
 	h_a.yaxis.set_ticks_position('left');
-	# Final update.
-	matplotlib.pyplot.draw_if_interactive();
-		
-	# Initialize the coordinates for the containing box.
-	x_min = L_x_i*dpi_f_i+0.0; x_max = 0.0;
-	y_min = L_y_i*dpi_f_i+0.0; y_max = 0.0;
-	# Loop through text objs again to find limits.
-	for h in h_f.findobj(matplotlib.text.Text):
-		# Ignore empty strings.
-		if not (h._renderer is None) and h.get_text():
-			# Get the containing box for the object.
-			bb = h.get_window_extent();
-			# Compare limits to running values.
-			x_min = min(x_min, bb.xmin);
-			x_max = max(x_max, bb.xmax);
-			y_min = min(y_min, bb.ymin);
-			y_max = max(y_max, bb.ymax);
-	# Bounding box of the existing axes object.
-	bb_a_i = h_a.get_position();
-	# Calculate the minimum required margins to fit all text.
-	margin_l =  bb_a_i.xmin*L_x_i - x_min/dpi_f_i;
-	margin_r = -bb_a_i.xmax*L_x_i + x_max/dpi_f_i;
-	margin_b =  bb_a_i.ymin*L_y_i - y_min/dpi_f_i;
-	margin_t = -bb_a_i.ymax*L_y_i + y_max/dpi_f_i;
-	print "left  : ", margin_l
-	print "right : ", margin_r
-	print "top   : ", margin_t
-	print "bottom: ", margin_b
 	
-	# NOTE: This will eventually be set by the input!
-	# Desired width of the figure
-	L_x = 3.25; # in
-	# Desired aspect ratio
-	AR_f = AR_f_i;
-	# Get the output height
-	L_y = L_x * AR_f + 0.0;
-	# Determine the correct DPI to keep the same window size.
-	dpi_f = L_x_i / L_x * dpi_f_i + 0.0;
-	# Apply the size changes to the figure.
-	matplotlib.pyplot.setp(h_f, 
-		'figwidth' , L_x  ,
-		'figheight', L_y  ,
-		'dpi'      , dpi_f);
+	# Calculate required margins (in inches).
+	# Check for interactive status.
+	if matplotlib.pyplot.isinteractive():
+		# Update the text box locations.
+		matplotlib.pyplot.draw();
+		# Initialize the coordinates for the containing box.
+		x_min = L_x*dpi_f+0.0; x_max = 0.0;
+		y_min = L_y*dpi_f+0.0; y_max = 0.0;
+		# Loop through text objs again to find limits.
+		for h in h_f.findobj(matplotlib.text.Text):
+			# Ignore empty strings.
+			if not (h._renderer is None) and h.get_text():
+				# Get the containing box for the object.
+				bb = h.get_window_extent();
+				# Compare limits to running values.
+				x_min = min(x_min, bb.xmin);
+				x_max = max(x_max, bb.xmax);
+				y_min = min(y_min, bb.ymin);
+				y_max = max(y_max, bb.ymax);
+		# Bounding box of the existing axes object.
+		bb_a_i = h_a.get_position();
+		# Calculate the minimum required margins to fit all text.
+		margin_l =  bb_a_i.xmin*L_x - x_min/dpi_f;
+		margin_r = -bb_a_i.xmax*L_x + x_max/dpi_f;
+		margin_b =  bb_a_i.ymin*L_y - y_min/dpi_f;
+		margin_t = -bb_a_i.ymax*L_y + y_max/dpi_f;
+		
+	else:
+		# Just guess at the margins
+		margin_l = 0.5;
+		margin_r = 0.07;
+		margin_b = 0.42;
+		# Check if there is a title.
+		if h_a.title():
+			# Make room for title.
+			margin_t = 0.35;
+		else:
+			# Just top yticklabel
+			margin_t = 0.05;
 	
 	# Set buffers (in inches)
 	b_l = 2./72;
@@ -172,11 +184,6 @@ def set_plot(h_f=None):
 	
 	# Final update.
 	matplotlib.pyplot.draw_if_interactive();
-	
-	print "x_min = ", (x_min/dpi_f - b_l)/L_x
-	print "x_max = ", (x_max/dpi_f + b_r)/L_x
-	print "y_min = ", (y_min/dpi_f - b_b)/L_y
-	print "y_max = ", (y_max/dpi_f + b_t)/L_y
 	
 	# Get the top-level line objects.
 	h_l = h_a.get_lines();
