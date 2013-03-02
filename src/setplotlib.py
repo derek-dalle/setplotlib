@@ -75,29 +75,12 @@ def set_plot(h_f=None):
 	h_a = h_a[0];
 	
 	# Now get the size of the figure.
-	L_f_i = h_f.get_size_inches();
+	L_x_i = h_f.get_figwidth()  + 0.0;
+	L_y_i = h_f.get_figheight() + 0.0;
 	# Calculate the aspect ratio.
-	AR_f_i = L_f_i[1] / L_f_i[0];
+	AR_f_i = L_y_i / L_x_i;
 	# And the dots per inch.
 	dpi_f_i = h_f.get_dpi() + 0.;
-	
-	# NOTE: This will eventually be set by the input!
-	# Desired width of the figure
-	w_f = 3.25; # in
-	# Desired aspect ratio
-	AR_f = AR_f_i;
-	# Save the dimensions
-	L_x = w_f + 0.;
-	L_y = w_f * AR_f + 0.;
-	# Determine the correct DPI to keep the same window size.
-	dpi_f = L_f_i[0] / w_f * dpi_f_i + 0.;
-	# Apply the size changes to the figure.
-	matplotlib.pyplot.setp(h_f, 
-		'figwidth' , L_x  ,
-		'figheight', L_y  ,
-		'dpi'      , dpi_f);
-	# Force an update to the objects.
-	matplotlib.pyplot.draw_if_interactive();
 	
 	# Find ALL the text objects
 	h_t = h_f.findobj(matplotlib.text.Text);
@@ -127,18 +110,12 @@ def set_plot(h_f=None):
 	# Turn off the extra ticks.
 	h_a.xaxis.set_ticks_position('bottom');
 	h_a.yaxis.set_ticks_position('left');
-	# Force an update.
+	# Final update.
 	matplotlib.pyplot.draw_if_interactive();
-	
-	# Set buffers (in inches)
-	b_l = 2./72;
-	b_r = 2./72;
-	b_b = 2./72;
-	b_t = 2./72;
-	
+		
 	# Initialize the coordinates for the containing box.
-	x_min = L_x*dpi_f; x_max = 0;
-	y_min = L_y*dpi_f; y_max = 0;
+	x_min = L_x_i*dpi_f_i+0.0; x_max = 0.0;
+	y_min = L_y_i*dpi_f_i+0.0; y_max = 0.0;
 	# Loop through text objs again to find limits.
 	for h in h_f.findobj(matplotlib.text.Text):
 		# Ignore empty strings.
@@ -152,15 +129,41 @@ def set_plot(h_f=None):
 			y_max = max(y_max, bb.ymax);
 	# Bounding box of the existing axes object.
 	bb_a_i = h_a.get_position();
-	print "xmin: ", x_min, "   ", bb_a_i.xmin
-	print "xmax: ", x_max, "   ", bb_a_i.xmax
-	print "ymin: ", y_min, "   ", bb_a_i.ymin
-	print "ymax: ", y_max, "   ", bb_a_i.ymax
-	# This is in scaled units... convert to pixels.
-	xmin_a = bb_a_i.xmin - (x_min/dpi_f - b_l) / L_x;
-	ymin_a = bb_a_i.ymin - (y_min/dpi_f - b_b) / L_y;
-	xmax_a = 1 + bb_a_i.xmax - (x_max/dpi_f + b_r) / L_x;
-	ymax_a = 1 + bb_a_i.ymax - (y_max/dpi_f + b_t) / L_y;
+	# Calculate the minimum required margins to fit all text.
+	margin_l =  bb_a_i.xmin*L_x_i - x_min/dpi_f_i;
+	margin_r = -bb_a_i.xmax*L_x_i + x_max/dpi_f_i;
+	margin_b =  bb_a_i.ymin*L_y_i - y_min/dpi_f_i;
+	margin_t = -bb_a_i.ymax*L_y_i + y_max/dpi_f_i;
+	print "left  : ", margin_l
+	print "right : ", margin_r
+	print "top   : ", margin_t
+	print "bottom: ", margin_b
+	
+	# NOTE: This will eventually be set by the input!
+	# Desired width of the figure
+	L_x = 3.25; # in
+	# Desired aspect ratio
+	AR_f = AR_f_i;
+	# Get the output height
+	L_y = L_x * AR_f + 0.0;
+	# Determine the correct DPI to keep the same window size.
+	dpi_f = L_x_i / L_x * dpi_f_i + 0.0;
+	# Apply the size changes to the figure.
+	matplotlib.pyplot.setp(h_f, 
+		'figwidth' , L_x  ,
+		'figheight', L_y  ,
+		'dpi'      , dpi_f);
+	
+	# Set buffers (in inches)
+	b_l = 2./72;
+	b_r = 2./72;
+	b_b = 2./72;
+	b_t = 2./72;
+	# Final axis location to contain text and buffers.
+	xmin_a = (margin_l + b_l) / L_x;
+	ymin_a = (margin_b + b_b) / L_y;
+	xmax_a = 1 - (margin_r + b_r) / L_x;
+	ymax_a = 1 - (margin_t + b_t) / L_y;
 	# Make a bounding box out of these parameters.
 	bb_a = matplotlib.transforms.Bbox(
 		array([[xmin_a, ymin_a], [xmax_a, ymax_a]]));
