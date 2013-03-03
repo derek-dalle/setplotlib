@@ -152,35 +152,27 @@ def set_plot(h_f=None):
 		margin_r = -bb_a_i.xmax*L_x + x_max/dpi_f;
 		margin_b =  bb_a_i.ymin*L_y - y_min/dpi_f;
 		margin_t = -bb_a_i.ymax*L_y + y_max/dpi_f;
+		# Set buffers (in inches)
+		b_l = 2./72;
+		b_r = 2./72;
+		b_b = 2./72;
+		b_t = 2./72;
+		# Final axis location to contain text and buffers.
+		xmin_a = (margin_l + b_l) / L_x;
+		ymin_a = (margin_b + b_b) / L_y;
+		xmax_a = 1 - (margin_r + b_r) / L_x;
+		ymax_a = 1 - (margin_t + b_t) / L_y;
+		# Make a bounding box out of these parameters.
+		bb_a = matplotlib.transforms.Bbox(
+			array([[xmin_a, ymin_a], [xmax_a, ymax_a]]));
+		# Apply it!
+		h_a.set_position(bb_a);
 		
 	else:
-		# Just guess at the margins
-		margin_l = 0.5;
-		margin_r = 0.07;
-		margin_b = 0.42;
-		# Check if there is a title.
-		if h_a.title():
-			# Make room for title.
-			margin_t = 0.35;
-		else:
-			# Just top yticklabel
-			margin_t = 0.05;
+		# Just use the built-in tight_axis funciton
+		matplotlib.pyplot.tight_layout();
 	
-	# Set buffers (in inches)
-	b_l = 2./72;
-	b_r = 2./72;
-	b_b = 2./72;
-	b_t = 2./72;
-	# Final axis location to contain text and buffers.
-	xmin_a = (margin_l + b_l) / L_x;
-	ymin_a = (margin_b + b_b) / L_y;
-	xmax_a = 1 - (margin_r + b_r) / L_x;
-	ymax_a = 1 - (margin_t + b_t) / L_y;
-	# Make a bounding box out of these parameters.
-	bb_a = matplotlib.transforms.Bbox(
-		array([[xmin_a, ymin_a], [xmax_a, ymax_a]]));
-	# Apply it!
-	h_a.set_position(bb_a);
+	
 	
 	# Final update.
 	matplotlib.pyplot.draw_if_interactive();
